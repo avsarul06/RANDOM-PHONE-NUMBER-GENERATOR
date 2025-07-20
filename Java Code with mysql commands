@@ -1,0 +1,65 @@
+import java.util.Random;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.DriverManager;
+
+public class phonenumber {
+    public static void main(String[] args) {
+        // Step 1: Generate random phone number
+        Random rand = new Random();
+        StringBuilder phone_number = new StringBuilder();
+        boolean a = true;
+        while(a) {
+            int first_digit = rand.nextInt(10);
+            if(first_digit == 6 || first_digit == 7 || first_digit == 8 || first_digit == 9) {
+                phone_number.append(first_digit);
+                a = false;
+            }
+        }
+        for(int i = 0; i < 9; i++) {
+            int digit = rand.nextInt(10);
+            phone_number.append(digit);
+        }
+        System.out.println("Generated Phone Number: " + phone_number);
+
+        // Step 2: Connect to database and check/insert phone number
+        String url = "jdbc:mysql://localhost:3306/random_phonenumber";
+        String user = "root";
+        String pass = "Sriramarul";
+
+        Connection conn = null;
+        PreparedStatement checkStmt = null;
+        PreparedStatement insertStmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DriverManager.getConnection(url, user, pass);
+
+            // Check if phone number exists
+            String checkSql = "SELECT 1 FROM PhoneNumbers WHERE phone_number = ?";
+            checkStmt = conn.prepareStatement(checkSql);
+            checkStmt.setString(1, phone_number.toString());
+            rs = checkStmt.executeQuery();
+
+            if(rs.next()) {
+                System.out.println("Phone number already exists in database.");
+            } else {
+                // Insert phone number
+                String insertSql = "INSERT INTO PhoneNumbers (phone_number) VALUES (?)";
+                insertStmt = conn.prepareStatement(insertSql);
+                insertStmt.setString(1, phone_number.toString());
+                insertStmt.executeUpdate();
+                System.out.println("Phone number inserted into database.");
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        } finally {
+            // Clean up resources
+            try { if(rs != null) rs.close(); } catch(Exception ex) {}
+            try { if(checkStmt != null) checkStmt.close(); } catch(Exception ex) {}
+            try { if(insertStmt != null) insertStmt.close(); } catch(Exception ex) {}
+            try { if(conn != null) conn.close(); } catch(Exception ex) {}
+        }
+    }
+}
